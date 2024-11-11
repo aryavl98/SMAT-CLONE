@@ -7,6 +7,8 @@ const Facebook = () => {
     const [message,setMessage] = useState('')
     const [accessToken,setAccessToken] = useState('')
     const [pagesData,setPagesData] = useState([])
+  const [isConnected, setIsConnected] = useState(false);
+
     const onLoginClick = () => {
         window.FB.login(function (response) {
           if (response.authResponse) {
@@ -68,27 +70,71 @@ const Facebook = () => {
             }
           );
       }
-      // useEffect(() => {
-      //   window.fbAsyncInit = () => {
-      //     window.FB.init({
-      //       appId: "235498918870773",
-      //       autoLogAppEvents: true,
-      //       xfbml: true,
-      //       version: "v11.0",
-      //     });
-      //   };
-      //   (function (d, s, id) {
-      //     var js,
-      //       fjs = d.getElementsByTagName(s)[0];
-      //     if (d.getElementById(id)) {
-      //       return;
-      //     }
-      //     js = d.createElement(s);
-      //     js.id = id;
-      //     js.src = "https://connect.facebook.net/en_US/sdk.js";
-      //     fjs.parentNode.insertBefore(js, fjs);
-      //   })(document, "script", "facebook-jssdk");
-      // }, []);
+      useEffect(() => {
+        console.log("Effect running"); // Verify that useEffect is called
+      
+        // Define fbAsyncInit function before loading the SDK
+        window.fbAsyncInit = function() {
+          console.log("fbAsyncInit called"); // Check if fbAsyncInit is called
+      
+          window.FB.init({
+            appId: '1227372158534623',
+            xfbml: true,
+            version: 'v21.0'
+          });
+      
+          // Log a page view
+          window.FB.AppEvents.logPageView();
+      
+          // Check login status
+          window.FB.getLoginStatus(response => {
+            console.log("FB.getLoginStatus response:", response);
+            
+            if (response.status) {
+              setIsConnected(true);
+            } else {
+              setIsConnected(false);
+            }
+          });
+        };
+      
+        // Load the Facebook SDK script asynchronously
+        (function(d, s, id) {
+          console.log("Attempting to load Facebook SDK script"); // Check if SDK load is initiated
+      
+          let js, fjs = d.getElementsByTagName(s)[0];
+          if (d.getElementById(id)) {
+            console.log("Facebook SDK script already loaded"); // Script already exists
+            return;
+          }
+      
+          js = d.createElement(s); 
+          js.id = id;
+          js.src = "https://connect.facebook.net/en_US/sdk.js";
+      
+          // Log script load success or failure
+          js.onload = () => {
+            console.log("Facebook SDK loaded successfully.");
+            if (typeof window.FB === 'undefined') {
+              console.error("Facebook SDK did not initialize properly");
+            }
+          };
+          js.onerror = () => console.error("Failed to load Facebook SDK.");
+      
+          fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+      
+        // Backup initialization if fbAsyncInit does not trigger
+        const checkFBInitialization = setInterval(() => {
+          if (window.FB) {
+            clearInterval(checkFBInitialization);
+            console.log("Backup: FB SDK detected");
+            window.FB.getLoginStatus(response => {
+              console.log("FB.getLoginStatus response (backup):", response);
+            });
+          }
+        }, 1000); // Check every 1 second
+      }, []);
       return (
         <div className="App">
           <button onClick={onLoginClick}>Login with Facebook</button>
